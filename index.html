@@ -4,35 +4,637 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Engine Exhaust Analysis Tool</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .timestamp {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            border-bottom: 1px solid #475569;
+            padding-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(51, 65, 85, 0.3);
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .section h3 {
+            font-size: 0.95rem;
+            color: #a1f5ff;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .input-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-field {
+            position: relative;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            margin-bottom: 5px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .form-field input {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(100, 116, 139, 0.2);
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-field input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .tooltip-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 0.7rem;
+            cursor: help;
+            margin-left: 5px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .tooltip-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: -80px;
+            width: 200px;
+            background: #1e293b;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            z-index: 1000;
+            white-space: normal;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .result-card {
+            background: rgba(51, 65, 85, 0.4);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #475569;
+        }
+
+        .result-title {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .result-unit {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .lambda-normal { color: #22c55e; }
+        .lambda-lean { color: #3b82f6; }
+        .lambda-rich { color: #ef4444; }
+
+        .comparison-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .comparison-item {
+            background: rgba(30, 41, 59, 0.6);
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #475569;
+        }
+
+        .comparison-label {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+
+        .comparison-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 6px;
+            padding: 12px;
+            color: #fca5a5;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .warning-message {
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid #eab308;
+            border-radius: 6px;
+            padding: 12px;
+            color: #fcd34d;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .supporting-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 0.85rem;
+        }
+
+        .supporting-value {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 2px solid #64748b;
+        }
+
+        .supporting-label {
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        .supporting-num {
+            color: #e2e8f0;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.8rem; }
+            .result-value { font-size: 1.8rem; }
+        }
+
+        @media (max-width: 768px) {
+            .input-group { grid-template-columns: 1fr; }
+            .comparison-row { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body class="dark-mode">
-    <div class="container">
+<body>
+    <div class="header">
         <h1>Engine Exhaust Analysis Tool</h1>
-        <div class="input-group">
-            <label for="gas-analyzer">Gas Analyzer</label>
-            <input type="text" id="gas-analyzer" placeholder="Enter gas composition">
-        </div>
-        <div class="input-group">
-            <label for="fuel-properties">Fuel Properties</label>
-            <input type="text" id="fuel-properties" placeholder="Enter fuel properties">
-        </div>
-        <div class="input-group">
-            <label for="fuel-flow">Fuel Flow</label>
-            <input type="number" id="fuel-flow" placeholder="Enter fuel flow rate">
-        </div>
-        <div class="input-group">
-            <label for="exhaust-conditions">Exhaust Conditions</label>
-            <input type="text" id="exhaust-conditions" placeholder="Enter exhaust conditions">
-        </div>
-        <div class="input-group">
-            <label for="energy-balance">Energy Balance</label>
-            <input type="text" id="energy-balance" placeholder="Enter energy balance">
-        </div>
-        <button id="calculate">Calculate</button>
-        <div id="results"></div>
-        <div class="error-analysis"></div>
+        <div class="timestamp" id="timestamp"></div>
     </div>
-    <script src="script.js"></script>
+
+    <div class="main-container">
+        <div class="panel">
+            <h2>Input Parameters</h2>
+            <div id="warnings"></div>
+
+            <div class="section">
+                <h3>Gas Analyzer</h3>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>CO₂ (%vol) <span class="tooltip-icon" data-tooltip="Carbon dioxide concentration">?</span></label>
+                        <input type="number" id="CO2" value="10.5" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>CO (%vol) <span class="tooltip-icon" data-tooltip="Carbon monoxide concentration">?</span></label>
+                        <input type="number" id="CO" value="0.5" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>O₂ (%vol) <span class="tooltip-icon" data-tooltip="Oxygen concentration">?</span></label>
+                        <input type="number" id="O2" value="2.0" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>HC (ppm) <span class="tooltip-icon" data-tooltip="Hydrocarbons">?</span></label>
+                        <input type="number" id="HC_ppm" value="50" min="0" step="1">
+                    </div>
+                </div>
+                <div class="input-group full">
+                    <div class="form-field">
+                        <label>NO (ppm) <span class="tooltip-icon" data-tooltip="Nitrogen oxide">?</span></label>
+                        <input type="number" id="NO_ppm" value="100" min="0" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Fuel Properties</h3>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>H/C Ratio <span class="tooltip-icon" data-tooltip="Hydrogen to carbon ratio">?</span></label>
+                        <input type="number" id="Hcv" value="1.87" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>O/C Ratio <span class="tooltip-icon" data-tooltip="Oxygen to carbon ratio">?</span></label>
+                        <input type="number" id="Ocv" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="input-group full">
+                    <div class="form-field">
+                        <label>Carbon Number (n) <span class="tooltip-icon" data-tooltip="Number of carbon atoms">?</span></label>
+                        <input type="number" id="n" value="1" min="1" step="0.1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Fuel Flow</h3>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>Volume Flow (ml/min) <span class="tooltip-icon" data-tooltip="Volumetric fuel flow rate">?</span></label>
+                        <input type="number" id="Vf" value="5" min="0" step="0.1">
+                    </div>
+                    <div class="form-field">
+                        <label>Density (kg/m³) <span class="tooltip-icon" data-tooltip="Fuel density">?</span></label>
+                        <input type="number" id="rho_f" value="850" min="0" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Exhaust Conditions</h3>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>Temperature (K) <span class="tooltip-icon" data-tooltip="Exhaust gas temperature">?</span></label>
+                        <input type="number" id="T" value="573" min="273" step="1">
+                    </div>
+                    <div class="form-field">
+                        <label>Pressure (Pa) <span class="tooltip-icon" data-tooltip="Exhaust gas pressure">?</span></label>
+                        <input type="number" id="P" value="101325" min="0" step="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Energy Balance</h3>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>Water Flow (kg/s) <span class="tooltip-icon" data-tooltip="Mass flow of cooling water">?</span></label>
+                        <input type="number" id="mW" value="0.05" min="0" step="0.01">
+                    </div>
+                    <div class="form-field">
+                        <label>Cp Water (J/kg·K) <span class="tooltip-icon" data-tooltip="Heat capacity of water">?</span></label>
+                        <input type="number" id="CpW" value="4186" min="0" step="1">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>Cp Gas (J/kg·K) <span class="tooltip-icon" data-tooltip="Heat capacity of gas">?</span></label>
+                        <input type="number" id="CpG" value="1100" min="0" step="1">
+                    </div>
+                    <div class="form-field">
+                        <label>T_gas_in (K) <span class="tooltip-icon" data-tooltip="Gas inlet temperature">?</span></label>
+                        <input type="number" id="T_gas_in" value="573" min="273" step="1">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-field">
+                        <label>T_gas_out (K) <span class="tooltip-icon" data-tooltip="Gas outlet temperature">?</span></label>
+                        <input type="number" id="T_gas_out" value="350" min="273" step="1">
+                    </div>
+                    <div class="form-field">
+                        <label>T_water_in (K) <span class="tooltip-icon" data-tooltip="Water inlet temperature">?</span></label>
+                        <input type="number" id="T_water_in" value="293" min="273" step="1">
+                    </div>
+                </div>
+                <div class="input-group full">
+                    <div class="form-field">
+                        <label>T_water_out (K) <span class="tooltip-icon" data-tooltip="Water outlet temperature">?</span></label>
+                        <input type="number" id="T_water_out" value="323" min="273" step="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel">
+                <h2>Lambda (Air/Fuel Ratio)</h2>
+                <div class="result-card">
+                    <div class="result-title">Lambda Value</div>
+                    <div class="result-value" id="lambdaResult">—</div>
+                    <div class="result-unit" id="lambdaStatus">Stoichiometric</div>
+                </div>
+                <div class="supporting-values">
+                    <div class="supporting-value">
+                        <div class="supporting-label">Theoretical Air (mol/mol)</div>
+                        <div class="supporting-num" id="A0">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">Dry Exhaust Vol (L/mol)</div>
+                        <div class="supporting-num" id="Gprime">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Mass Flow Analysis</h2>
+                <div class="comparison-row">
+                    <div class="comparison-item">
+                        <div class="comparison-label">Dry Exhaust (Measured)</div>
+                        <div class="comparison-value" id="mG_dry">—</div>
+                        <div class="result-unit">kg/s</div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-label">Energy Balance</div>
+                        <div class="comparison-value" id="mG_EB">—</div>
+                        <div class="result-unit">kg/s</div>
+                    </div>
+                </div>
+                <div class="result-card">
+                    <div class="result-title">Error Analysis</div>
+                    <div class="result-value" id="errorPercent">—</div>
+                    <div class="result-unit" id="errorStatus">Calculating...</div>
+                </div>
+                <div id="errorCard"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Calculation Support</h2>
+                <div class="supporting-values">
+                    <div class="supporting-value">
+                        <div class="supporting-label">Fuel Mass Flow</div>
+                        <div class="supporting-num" id="mfuel">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">Std Vol Flow (dry)</div>
+                        <div class="supporting-num" id="Vdot_std">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">Actual Vol Flow</div>
+                        <div class="supporting-num" id="Vdot_actual">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">Exhaust Density</div>
+                        <div class="supporting-num" id="rho_exhaust">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">HC (%vol)</div>
+                        <div class="supporting-num" id="HC_vol">—</div>
+                    </div>
+                    <div class="supporting-value">
+                        <div class="supporting-label">NO (%vol)</div>
+                        <div class="supporting-num" id="NO_vol">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent = now.toLocaleString();
+        }
+        updateTimestamp();
+        setInterval(updateTimestamp, 1000);
+
+        function fmt(num) {
+            if (!isFinite(num)) return '—';
+            return num.toFixed(4);
+        }
+
+        function calculate() {
+            const CO2 = parseFloat(document.getElementById('CO2').value) || 0;
+            const CO = parseFloat(document.getElementById('CO').value) || 0;
+            const O2 = parseFloat(document.getElementById('O2').value) || 0;
+            const HC_ppm = parseFloat(document.getElementById('HC_ppm').value) || 0;
+            const NO_ppm = parseFloat(document.getElementById('NO_ppm').value) || 0;
+            const Hcv = parseFloat(document.getElementById('Hcv').value) || 0;
+            const Ocv = parseFloat(document.getElementById('Ocv').value) || 0;
+            const n = parseFloat(document.getElementById('n').value) || 1;
+            const Vf = parseFloat(document.getElementById('Vf').value) || 0;
+            const rho_f = parseFloat(document.getElementById('rho_f').value) || 0;
+            const T = parseFloat(document.getElementById('T').value) || 273;
+            const P = parseFloat(document.getElementById('P').value) || 101325;
+            const mW = parseFloat(document.getElementById('mW').value) || 0;
+            const CpW = parseFloat(document.getElementById('CpW').value) || 0;
+            const CpG = parseFloat(document.getElementById('CpG').value) || 0;
+            const T_gas_in = parseFloat(document.getElementById('T_gas_in').value) || 273;
+            const T_gas_out = parseFloat(document.getElementById('T_gas_out').value) || 273;
+            const T_water_in = parseFloat(document.getElementById('T_water_in').value) || 273;
+            const T_water_out = parseFloat(document.getElementById('T_water_out').value) || 273;
+
+            const HC = HC_ppm / 10000;
+            const NO = NO_ppm / 10000;
+
+            document.getElementById('warnings').innerHTML = '';
+
+            let hasError = false;
+            if (CO2 === 0) {
+                document.getElementById('warnings').innerHTML += '<div class="error-message">❌ CO₂ cannot be zero</div>';
+                hasError = true;
+            }
+            if (CO2 + CO < 0.01) {
+                document.getElementById('warnings').innerHTML += '<div class="warning-message">⚠️ CO₂ + CO very low</div>';
+            }
+
+            if (hasError) {
+                resetResults();
+                return;
+            }
+
+            const numerator = CO2 + CO/2 + O2 + NO/2 +
+                ((Hcv/4) * (3.5 / (3.5 + (CO/CO2))) - (Ocv/2)) * (CO2 + CO);
+            const denominator = (1 + Hcv/4 - Ocv/2) * (CO2 + CO + n * HC);
+
+            const lambda = denominator !== 0 ? numerator / denominator : 0;
+            const A0 = (22.4 / 0.21) * (1/12 + (1/4)*(Hcv - Ocv/8));
+            const Gprime = (lambda - 0.21) * A0 + 22.4 * (1/12);
+            const mfuel = (Vf * rho_f) / (60 * 1e6);
+            const Vdot_std = Gprime * mfuel;
+            const Vdot_actual = Vdot_std * (T / 273);
+            const rho_exhaust = (P * 29) / (8314 * T);
+            const mG_dry = rho_exhaust * Vdot_actual;
+            const dT_water = T_water_out - T_water_in;
+            const dT_gas = T_gas_in - T_gas_out;
+            const mG_EB = dT_gas !== 0 ? mW * (CpW / CpG) * (dT_water / dT_gas) : 0;
+            const error = mG_dry !== 0 ? ((mG_EB - mG_dry) / mG_dry) * 100 : 0;
+
+            updateLambdaDisplay(lambda);
+            document.getElementById('A0').textContent = fmt(A0);
+            document.getElementById('Gprime').textContent = fmt(Gprime);
+            document.getElementById('mfuel').textContent = fmt(mfuel * 1e6) + ' mg/s';
+            document.getElementById('Vdot_std').textContent = fmt(Vdot_std);
+            document.getElementById('Vdot_actual').textContent = fmt(Vdot_actual);
+            document.getElementById('rho_exhaust').textContent = fmt(rho_exhaust);
+            document.getElementById('HC_vol').textContent = fmt(HC);
+            document.getElementById('NO_vol').textContent = fmt(NO);
+            document.getElementById('mG_dry').textContent = fmt(mG_dry);
+            document.getElementById('mG_EB').textContent = fmt(mG_EB);
+            updateErrorDisplay(error);
+        }
+
+        function updateLambdaDisplay(lambda) {
+            const result = document.getElementById('lambdaResult');
+            const status = document.getElementById('lambdaStatus');
+            result.textContent = fmt(lambda);
+
+            if (Math.abs(lambda - 1.0) < 0.05) {
+                result.className = 'result-value lambda-normal';
+                status.textContent = '✓ Stoichiometric';
+                status.style.color = '#22c55e';
+            } else if (lambda > 1.0) {
+                result.className = 'result-value lambda-lean';
+                status.textContent = '○ Lean (Excess Air)';
+                status.style.color = '#3b82f6';
+            } else {
+                result.className = 'result-value lambda-rich';
+                status.textContent = '● Rich (Fuel Rich)';
+                status.style.color = '#ef4444';
+            }
+        }
+
+        function updateErrorDisplay(error) {
+            const errorCard = document.getElementById('errorCard');
+            const errorPercent = document.getElementById('errorPercent');
+            const errorStatus = document.getElementById('errorStatus');
+
+            errorPercent.textContent = fmt(error) + '%';
+            errorCard.innerHTML = '';
+
+            if (error < 5) {
+                errorPercent.className = 'result-value';
+                errorPercent.style.color = '#22c55e';
+                errorStatus.textContent = '✓ Good Agreement';
+                errorStatus.style.color = '#22c55e';
+            } else if (error < 15) {
+                errorPercent.className = 'result-value';
+                errorPercent.style.color = '#eab308';
+                errorStatus.textContent = '⚠ Moderate Difference';
+                errorStatus.style.color = '#eab308';
+                errorCard.innerHTML = '<div class="warning-message">Moderate deviation from measured values</div>';
+            } else {
+                errorPercent.className = 'result-value';
+                errorPercent.style.color = '#ef4444';
+                errorStatus.textContent = '✗ High Error';
+                errorStatus.style.color = '#ef4444';
+                errorCard.innerHTML = '<div class="error-message">High deviation detected</div>';
+            }
+        }
+
+        function resetResults() {
+            document.getElementById('lambdaResult').textContent = '—';
+            document.getElementById('lambdaStatus').textContent = 'Error';
+            document.getElementById('A0').textContent = '—';
+            document.getElementById('Gprime').textContent = '—';
+            document.getElementById('mfuel').textContent = '—';
+            document.getElementById('Vdot_std').textContent = '—';
+            document.getElementById('Vdot_actual').textContent = '—';
+            document.getElementById('rho_exhaust').textContent = '—';
+            document.getElementById('HC_vol').textContent = '—';
+            document.getElementById('NO_vol').textContent = '—';
+            document.getElementById('mG_dry').textContent = '—';
+            document.getElementById('mG_EB').textContent = '—';
+            document.getElementById('errorPercent').textContent = '—';
+            document.getElementById('errorStatus').textContent = 'Validation error';
+            document.getElementById('errorCard').innerHTML = '';
+        }
+
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        calculate();
+    </script>
 </body>
 </html>
