@@ -641,13 +641,14 @@
             const HC_pct = HC_ppm / 10000;
             const NO_pct = NOx_ppm / 10000;
 
+            const ratio = 3.5 / (3.5 + CO / CO2);
+
             const numerator =
                 CO2
                 + CO / 2
                 + O2
                 + NO_pct / 2
-                + (Hcv / 4) * (3.5 / (3.5 + CO / CO2))
-                - (Ocv / 2) * (CO2 + CO);
+                + ((Hcv / 4) * ratio - Ocv / 2) * (CO2 + CO);
 
             const denominator =
                 (1 + Hcv / 4 - Ocv / 2)
