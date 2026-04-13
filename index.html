@@ -1237,7 +1237,7 @@ document.getElementById('exportPDFBtn').addEventListener('click', function() {
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 23);
 
     doc.autoTable({
-        head: [['RPM','ṁfuel (kg/s)','λ','A0','G\'','V̇G,STD','V̇G,act','ρexh','ṁG,G\' (kg/s)','ṁG,EB (kg/s)','%Diff']],
+        head: [['RPM', 'mfuel (kg/s)', 'Lambda', 'A0 (m3/kg)', 'G-prime (m3/kg)', 'VG-STD (m3/s)', 'VG-actual (m3/s)', 'rho-exhaust (kg/m3)', 'mG-Gprime (kg/s)', 'mG-EB (kg/s)', '%Diff']],
         body: savedResults.map(r => [r.RPM, r.m_fuel, r.lambda, r.A0, r.G_prime, r.Vdot_STD, r.Vdot_actual, r.rho, r.m_G_Gprime, r.m_G_EB, r.pctDiff+'%']),
         startY: 28,
         styles: { fontSize: 8, cellPadding: 3, textColor: [229,231,235], fillColor: [22,27,34] },
