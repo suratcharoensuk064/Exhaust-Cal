@@ -19,7 +19,6 @@
 
         html, body {
             width: 100%;
-            height: 100%;
             min-height: 100%;
             font-family: 'Barlow Condensed', sans-serif;
             background: #0d0f14;
@@ -77,6 +76,7 @@
         }
 
         .sidebar-title {
+            font-family: 'Barlow Condensed', sans-serif;
             font-size: 24px;
             font-weight: 700;
             color: #f59e0b;
@@ -120,9 +120,9 @@
         }
 
         .group-content {
-            max-height: 1200px;
+            max-height: 1000px;
             overflow: hidden;
-            transition: max-height 0.3s ease, padding-top 0.3s ease;
+            transition: max-height 0.3s ease;
             padding-top: 12px;
         }
 
@@ -193,6 +193,7 @@
         }
 
         .results-title {
+            font-family: 'Barlow Condensed', sans-serif;
             font-size: 20px;
             font-weight: 700;
             color: #f59e0b;
@@ -276,7 +277,7 @@
             border-radius: 8px;
             padding: 20px;
             display: flex;
-            gap: 16px;
+            flex-direction: column;
             overflow: hidden;
         }
 
@@ -290,6 +291,7 @@
         }
 
         .chart-title {
+            font-family: 'Barlow Condensed', sans-serif;
             font-size: 18px;
             font-weight: 700;
             color: #f59e0b;
@@ -331,16 +333,6 @@
             height: 220px;
         }
 
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
         @media (max-width: 1024px) {
             .wrapper {
                 flex-direction: column;
@@ -354,10 +346,16 @@
             .results-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
+        }
 
-            .chart-panel {
-                flex-direction: column;
-            }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
         }
 
         @media (max-width: 768px) {
@@ -609,13 +607,13 @@
                 </div>
             </div>
 
-            <div class="chart-panel">
+            <div class="chart-panel" style="display:flex;gap:16px;">
                 <div style="flex:1;display:flex;flex-direction:column;">
                     <div class="chart-header">
                         <div class="chart-title">Mass Flow Comparison</div>
                         <div class="chart-buttons">
-                            <button id="addPointBtn" type="button">+ Add Test Point</button>
-                            <button id="clearChartBtn" type="button">Clear Chart</button>
+                            <button id="addPointBtn">+ Add Test Point</button>
+                            <button id="clearChartBtn">Clear Chart</button>
                         </div>
                     </div>
                     <div class="chart-container">
@@ -624,11 +622,11 @@
                 </div>
 
                 <div style="width:300px;display:flex;flex-direction:column;background:#0d0f14;border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:14px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:6px;flex-wrap:wrap;">
-                        <div style="font-size:16px;font-weight:700;color:#f59e0b;letter-spacing:1px;">SAVED RESULTS</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#f59e0b;letter-spacing:1px;">SAVED RESULTS</div>
                         <div style="display:flex;gap:6px;">
-                            <button id="saveResultBtn" type="button" style="padding:6px 10px;font-size:11px;">💾 Save</button>
-                            <button id="exportPDFBtn" type="button" style="padding:6px 10px;font-size:11px;">Export PDF</button>
+                            <button id="saveResultBtn" style="padding:6px 10px;font-size:11px;">💾 Save</button>
+                            <button id="exportPDFBtn" style="padding:6px 10px;font-size:11px;">Export PDF</button>
                         </div>
                     </div>
                     <div style="flex:1;overflow-y:auto;">
@@ -647,7 +645,7 @@
                     </div>
                     <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(245,158,11,0.1);display:flex;justify-content:space-between;align-items:center;">
                         <span id="savedCount" style="color:#6b7280;font-size:10px;font-family:'JetBrains Mono',monospace;">0 records</span>
-                        <button id="clearTableBtn" type="button" style="padding:4px 8px;font-size:10px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">Clear</button>
+                        <button id="clearTableBtn" style="padding:4px 8px;font-size:10px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">Clear</button>
                     </div>
                 </div>
             </div>
@@ -655,89 +653,114 @@
     </div>
 
     <script>
-        function isMissing(value) {
-            return value === null || value === undefined || Number.isNaN(value);
-        }
+        // ============================================================
+        // FORMULAS AND CALCULATIONS
+        // ============================================================
 
+        // Eq. 2.35 — Fuel mass flow rate
         function calcMFuel(Vdot_f_ml_min, rho_f_kg_l) {
-            if (isMissing(Vdot_f_ml_min) || isMissing(rho_f_kg_l)) return null;
+            if (!Vdot_f_ml_min || !rho_f_kg_l) return null;
             return (Vdot_f_ml_min * rho_f_kg_l) / (60 * 1000);
         }
 
+        // Eq. 2.36 — Brettschneider
         function calcLambda(CO2, CO, O2, HC_ppm, NOx_ppm, Hcv, Ocv, n) {
-            if ([CO2, CO, O2, HC_ppm, NOx_ppm, Hcv, Ocv, n].some(isMissing)) return null;
-            if (CO2 === 0) return null;
-
             const HC_pct = HC_ppm / 10000;
             const NO_pct = NOx_ppm / 10000;
-            const ratioDenominator = 3.5 + CO / CO2;
-            if (ratioDenominator === 0) return null;
 
-            const ratio = 3.5 / ratioDenominator;
+            const ratio = 3.5 / (3.5 + CO / CO2);
+
             const numerator =
-                CO2 +
-                CO / 2 +
-                O2 +
-                NO_pct / 2 +
-                ((Hcv / 4) * ratio - Ocv / 2) * (CO2 + CO);
+                CO2
+                + CO / 2
+                + O2
+                + NO_pct / 2
+                + ((Hcv / 4) * ratio - Ocv / 2) * (CO2 + CO);
 
             const denominator =
-                (1 + Hcv / 4 - Ocv / 2) * (CO2 + CO + n * HC_pct);
+                (1 + Hcv / 4 - Ocv / 2)
+                * (CO2 + CO + n * HC_pct);
 
-            if (denominator === 0) return null;
             return numerator / denominator;
         }
 
+        // Eq. 2.37 — Stoichiometric air volume
         function calcA0(C, H, O, S) {
-            if ([C, H, O, S].some(isMissing)) return null;
-            const molarVol = 22.4;
-            const O2Fraction = 0.21;
-            return (molarVol / O2Fraction) * (C / 12 + 0.25 * (H - O / 8) + S / 32);
+            if (!C && C !== 0) return null;
+            if (!H && H !== 0) return null;
+            if (!O && O !== 0) return null;
+            if (!S && S !== 0) return null;
+
+            const molar_vol = 22.4;
+            const O2_fraction = 0.21;
+            return (molar_vol / O2_fraction) * (C / 12 + (1 / 4) * (H - O / 8) + S / 32);
         }
 
+        // Eq. 2.40 — Dry exhaust gas specific volume
         function calcGPrime(lambda, A0, C, S, N) {
-            if ([lambda, A0, C, S, N].some(isMissing)) return null;
-            const molarVol = 22.4;
-            return (lambda - 0.21) * A0 + molarVol * (C / 12 + S / 32 + N / 28);
+            if (!lambda && lambda !== 0) return null;
+            if (!A0 && A0 !== 0) return null;
+            if (!C && C !== 0) return null;
+            if (!S && S !== 0) return null;
+            if (!N && N !== 0) return null;
+
+            const molar_vol = 22.4;
+            return (lambda - 0.21) * A0 + molar_vol * (C / 12 + S / 32 + N / 28);
         }
 
+        // Eq. 2.41 — Volume flow rate at standard conditions
         function calcVdotGSTD(G_prime, m_fuel) {
-            if ([G_prime, m_fuel].some(isMissing)) return null;
+            if (!G_prime && G_prime !== 0) return null;
+            if (!m_fuel && m_fuel !== 0) return null;
             return G_prime * m_fuel;
         }
 
+        // Eq. 2.42 — Actual volume flow rate (corrected for temperature)
         function calcVdotGActual(Vdot_G_STD, T_actual_C) {
-            if ([Vdot_G_STD, T_actual_C].some(isMissing)) return null;
+            if (!Vdot_G_STD && Vdot_G_STD !== 0) return null;
+            if (!T_actual_C && T_actual_C !== 0) return null;
+
             const T_actual_K = T_actual_C + 273.15;
             const T_STD_K = 273.15;
             return Vdot_G_STD * (T_actual_K / T_STD_K);
         }
 
+        // Eq. 2.30 — Exhaust gas density (ideal gas law)
         function calcRhoExhaust(P_kPa, M, T_C) {
-            if ([P_kPa, M, T_C].some(isMissing)) return null;
+            if (!P_kPa && P_kPa !== 0) return null;
+            if (!M && M !== 0) return null;
+            if (!T_C && T_C !== 0) return null;
+
             const P_Pa = P_kPa * 1000;
             const T_K = T_C + 273.15;
             const R = 8.314;
-            if (T_K === 0) return null;
             return (P_Pa * M) / (R * T_K);
         }
 
+        // Eq. 2.43 — Mass flow rate via G' method
         function calcMGPrime(rho_exhaust, Vdot_G_actual) {
-            if ([rho_exhaust, Vdot_G_actual].some(isMissing)) return null;
+            if (!rho_exhaust && rho_exhaust !== 0) return null;
+            if (!Vdot_G_actual && Vdot_G_actual !== 0) return null;
             return rho_exhaust * Vdot_G_actual;
         }
 
+        // Eq. 2.45 — Energy Balance Method
         function calcMdotEB(m_W, C_PG, T_GI_C, T_GO_C, T_WI_C, T_WO_C) {
-            if ([m_W, C_PG, T_GI_C, T_GO_C, T_WI_C, T_WO_C].some(isMissing)) return null;
-            const C_PW = 4.186;
-            const deltaWater = T_WO_C - T_WI_C;
-            const deltaGas = T_GI_C - T_GO_C;
-            if (C_PG === 0 || deltaGas === 0) return null;
-            return m_W * (C_PW / C_PG) * (deltaWater / deltaGas);
+            const C_PW = 4.186; // kJ/(kg·K), hardcoded constant
+
+            const T_GI = T_GI_C + 273.15;
+            const T_GO = T_GO_C + 273.15;
+            const T_WI = T_WI_C + 273.15;
+            const T_WO = T_WO_C + 273.15;
+
+            return m_W * (C_PW / C_PG) * ((T_WO - T_WI) / (T_GI - T_GO));
         }
 
+        // ============================================================
+        // UI AND STATE
+        // ============================================================
+
         const inputs = {
-            rpm: document.getElementById('rpm'),
             Hcv: document.getElementById('Hcv'),
             Ocv: document.getElementById('Ocv'),
             C: document.getElementById('C'),
@@ -788,120 +811,140 @@
             m_G_EB: document.getElementById('card-m_G_EB')
         };
 
-        let savedResults = [];
+        let testPoints = [];
         let chart = null;
+        let savedResults = [];
 
-        document.querySelectorAll('.group-header').forEach((header) => {
-            header.addEventListener('click', function () {
+        // ============================================================
+        // COLLAPSIBLE SECTIONS
+        // ============================================================
+
+        document.querySelectorAll('.group-header').forEach(header => {
+            header.addEventListener('click', function() {
                 const content = this.nextElementSibling;
                 this.classList.toggle('collapsed');
                 content.classList.toggle('collapsed');
             });
         });
 
-        function parseInputValue(element) {
-            if (!element) return null;
-            const raw = element.value.trim();
-            if (raw === '') return null;
-            const num = parseFloat(raw);
-            return Number.isNaN(num) ? null : num;
-        }
-
-        function setPreview(id, text) {
-            const el = document.getElementById(id);
-            if (el) el.textContent = text || '';
-        }
+        // ============================================================
+        // CONVERSION PREVIEWS
+        // ============================================================
 
         function updateConversionPreviews() {
-            const vdot_f = parseInputValue(inputs.Vdot_f);
-            setPreview('prev-Vdot_f', vdot_f !== null ? `= ${((vdot_f * 60) / 1000).toFixed(4)} L/h` : '');
-
-            const rho_f = parseInputValue(inputs.rho_f);
-            setPreview('prev-rho_f', rho_f !== null ? `= ${(rho_f * 1000).toFixed(1)} kg/m³` : '');
-
-            const CO2 = parseInputValue(inputs.CO2);
-            setPreview('prev-CO2', CO2 !== null ? `= ${(CO2 / 100).toFixed(6)} fraction` : '');
-
-            const CO = parseInputValue(inputs.CO);
-            setPreview('prev-CO', CO !== null ? `= ${(CO / 100).toFixed(6)} fraction` : '');
-
-            const O2 = parseInputValue(inputs.O2);
-            setPreview('prev-O2', O2 !== null ? `= ${(O2 / 100).toFixed(6)} fraction` : '');
-
-            const HC_ppm = parseInputValue(inputs.HC_ppm);
-            setPreview('prev-HC', HC_ppm !== null ? `= ${(HC_ppm / 10000).toFixed(6)} % Vol` : '');
-
-            const NOx_ppm = parseInputValue(inputs.NOx_ppm);
-            setPreview('prev-NOx', NOx_ppm !== null ? `= ${(NOx_ppm / 10000).toFixed(6)} % Vol (ref)` : '');
-
-            const P_kPa = parseInputValue(inputs.P_kPa);
-            setPreview('prev-P', P_kPa !== null ? `= ${(P_kPa * 1000).toFixed(0)} Pa` : '');
-
-            const M = parseInputValue(inputs.M);
-            setPreview('prev-M', M !== null ? `= ${(M * 1000).toFixed(2)} g/mol` : '');
-
-            const T_actual = parseInputValue(inputs.T_actual_C);
-            setPreview('prev-T', T_actual !== null ? `= ${(T_actual + 273.15).toFixed(2)} K` : '');
-
-            const m_W_lpm = parseInputValue(inputs.m_W);
-            setPreview('prev-m_W', m_W_lpm !== null ? `= ${(m_W_lpm / 60).toFixed(6)} kg/s` : '');
-
-            const C_PG = parseInputValue(inputs.C_PG);
-            setPreview('prev-C_PG', C_PG !== null ? `= ${C_PG.toFixed(4)} kJ/(kg·K)` : '');
-
-            const T_GI = parseInputValue(inputs.T_GI_C);
-            setPreview('prev-T_GI', T_GI !== null ? `= ${(T_GI + 273.15).toFixed(2)} K` : '');
-
-            const T_GO = parseInputValue(inputs.T_GO_C);
-            setPreview('prev-T_GO', T_GO !== null ? `= ${(T_GO + 273.15).toFixed(2)} K` : '');
-
-            const T_WI = parseInputValue(inputs.T_WI_C);
-            setPreview('prev-T_WI', T_WI !== null ? `= ${(T_WI + 273.15).toFixed(2)} K` : '');
-
-            const T_WO = parseInputValue(inputs.T_WO_C);
-            setPreview('prev-T_WO', T_WO !== null ? `= ${(T_WO + 273.15).toFixed(2)} K` : '');
-        }
-
-        function updateResult(key, value, decimals) {
-            if (value === null || Number.isNaN(value) || !Number.isFinite(value)) {
-                results[key].textContent = '—';
-                return;
+            const vdot_f = inputs.Vdot_f.value;
+            if (vdot_f) {
+                const ml_min_to_l_h = (vdot_f * 60) / 1000;
+                document.getElementById('prev-Vdot_f').textContent = `= ${ml_min_to_l_h.toFixed(4)} L/h`;
+            } else {
+                document.getElementById('prev-Vdot_f').textContent = '';
             }
 
-            results[key].textContent = value.toFixed(decimals);
-            resultCards[key].classList.remove('pulse');
-            void resultCards[key].offsetWidth;
-            resultCards[key].classList.add('pulse');
+            const T_actual = inputs.T_actual_C.value;
+            if (T_actual) {
+                const T_K = parseFloat(T_actual) + 273.15;
+                document.getElementById('prev-T').textContent = `= ${T_K.toFixed(2)} K`;
+            } else {
+                document.getElementById('prev-T').textContent = '';
+            }
+
+            const P_kPa = inputs.P_kPa.value;
+            if (P_kPa) {
+                const P_Pa = parseFloat(P_kPa) * 1000;
+                document.getElementById('prev-P').textContent = `= ${P_Pa.toFixed(0)} Pa`;
+            } else {
+                document.getElementById('prev-P').textContent = '';
+            }
+
+            const HC_ppm = inputs.HC_ppm.value;
+            if (HC_ppm) {
+                const HC_pct = parseFloat(HC_ppm) / 10000;
+                document.getElementById('prev-HC').textContent = `= ${HC_pct.toFixed(6)} % Vol`;
+            } else {
+                document.getElementById('prev-HC').textContent = '';
+            }
+
+            const NOx_ppm = inputs.NOx_ppm.value;
+            if (NOx_ppm) {
+                const NOx_pct = parseFloat(NOx_ppm) / 10000;
+                document.getElementById('prev-NOx').textContent = `= ${NOx_pct.toFixed(6)} % Vol (ref)`;
+            } else {
+                document.getElementById('prev-NOx').textContent = '';
+            }
+
+            const m_W_lpm = inputs.m_W.value;
+            if (m_W_lpm) {
+                const m_W_kgs = parseFloat(m_W_lpm) / 60;
+                document.getElementById('prev-m_W').textContent = `= ${m_W_kgs.toFixed(6)} kg/s`;
+            } else {
+                document.getElementById('prev-m_W').textContent = '';
+            }
+
+            const T_GI = inputs.T_GI_C.value;
+            if (T_GI) {
+                const T_GI_K = parseFloat(T_GI) + 273.15;
+                document.getElementById('prev-T_GI').textContent = `= ${T_GI_K.toFixed(2)} K`;
+            } else {
+                document.getElementById('prev-T_GI').textContent = '';
+            }
+
+            const T_GO = inputs.T_GO_C.value;
+            if (T_GO) {
+                const T_GO_K = parseFloat(T_GO) + 273.15;
+                document.getElementById('prev-T_GO').textContent = `= ${T_GO_K.toFixed(2)} K`;
+            } else {
+                document.getElementById('prev-T_GO').textContent = '';
+            }
+
+            const T_WI = inputs.T_WI_C.value;
+            if (T_WI) {
+                const T_WI_K = parseFloat(T_WI) + 273.15;
+                document.getElementById('prev-T_WI').textContent = `= ${T_WI_K.toFixed(2)} K`;
+            } else {
+                document.getElementById('prev-T_WI').textContent = '';
+            }
+
+            const T_WO = inputs.T_WO_C.value;
+            if (T_WO) {
+                const T_WO_K = parseFloat(T_WO) + 273.15;
+                document.getElementById('prev-T_WO').textContent = `= ${T_WO_K.toFixed(2)} K`;
+            } else {
+                document.getElementById('prev-T_WO').textContent = '';
+            }
         }
+
+        // ============================================================
+        // MAIN CALCULATION FUNCTION
+        // ============================================================
 
         function calculate() {
             updateConversionPreviews();
 
-            const Hcv = parseInputValue(inputs.Hcv);
-            const Ocv = parseInputValue(inputs.Ocv);
-            const C = parseInputValue(inputs.C);
-            const H = parseInputValue(inputs.H);
-            const O = parseInputValue(inputs.O);
-            const S = parseInputValue(inputs.S);
-            const N = parseInputValue(inputs.N);
-            const n = parseInputValue(inputs.n);
-            const Vdot_f = parseInputValue(inputs.Vdot_f);
-            const rho_f = parseInputValue(inputs.rho_f);
-            const CO2 = parseInputValue(inputs.CO2);
-            const CO = parseInputValue(inputs.CO);
-            const O2 = parseInputValue(inputs.O2);
-            const HC_ppm = parseInputValue(inputs.HC_ppm);
-            const NOx_ppm = parseInputValue(inputs.NOx_ppm);
-            const P_kPa = parseInputValue(inputs.P_kPa);
-            const M = parseInputValue(inputs.M);
-            const T_actual_C = parseInputValue(inputs.T_actual_C);
-            const m_W_lpm = parseInputValue(inputs.m_W);
+            const Hcv = inputs.Hcv.value ? parseFloat(inputs.Hcv.value) : null;
+            const Ocv = inputs.Ocv.value ? parseFloat(inputs.Ocv.value) : null;
+            const C = inputs.C.value ? parseFloat(inputs.C.value) : null;
+            const H = inputs.H.value ? parseFloat(inputs.H.value) : null;
+            const O = inputs.O.value ? parseFloat(inputs.O.value) : null;
+            const S = inputs.S.value ? parseFloat(inputs.S.value) : null;
+            const N = inputs.N.value ? parseFloat(inputs.N.value) : null;
+            const n = inputs.n.value ? parseFloat(inputs.n.value) : null;
+            const Vdot_f = inputs.Vdot_f.value ? parseFloat(inputs.Vdot_f.value) : null;
+            const rho_f = inputs.rho_f.value ? parseFloat(inputs.rho_f.value) : null;
+            const CO2 = inputs.CO2.value ? parseFloat(inputs.CO2.value) : null;
+            const CO = inputs.CO.value ? parseFloat(inputs.CO.value) : null;
+            const O2 = inputs.O2.value ? parseFloat(inputs.O2.value) : null;
+            const HC_ppm = inputs.HC_ppm.value ? parseFloat(inputs.HC_ppm.value) : null;
+            const NOx_ppm = inputs.NOx_ppm.value ? parseFloat(inputs.NOx_ppm.value) : null;
+            const P_kPa = inputs.P_kPa.value ? parseFloat(inputs.P_kPa.value) : null;
+            const M = inputs.M.value ? parseFloat(inputs.M.value) : null;
+            const T_actual_C = inputs.T_actual_C.value ? parseFloat(inputs.T_actual_C.value) : null;
+            const m_W_lpm = inputs.m_W.value ? parseFloat(inputs.m_W.value) : null;
             const m_W = m_W_lpm !== null ? m_W_lpm / 60 : null;
-            const C_PG = parseInputValue(inputs.C_PG);
-            const T_GI_C = parseInputValue(inputs.T_GI_C);
-            const T_GO_C = parseInputValue(inputs.T_GO_C);
-            const T_WI_C = parseInputValue(inputs.T_WI_C);
-            const T_WO_C = parseInputValue(inputs.T_WO_C);
+            const C_PG = inputs.C_PG.value ? parseFloat(inputs.C_PG.value) : null;
+            const T_GI_C = inputs.T_GI_C.value ? parseFloat(inputs.T_GI_C.value) : null;
+            const T_GO_C = inputs.T_GO_C.value ? parseFloat(inputs.T_GO_C.value) : null;
+            const T_WI_C = inputs.T_WI_C.value ? parseFloat(inputs.T_WI_C.value) : null;
+            const T_WO_C = inputs.T_WO_C.value ? parseFloat(inputs.T_WO_C.value) : null;
 
             const m_fuel = calcMFuel(Vdot_f, rho_f);
             const lambda = calcLambda(CO2, CO, O2, HC_ppm, NOx_ppm, Hcv, Ocv, n);
@@ -924,15 +967,31 @@
             updateResult('m_G_EB', m_G_EB, 6);
 
             const m_W_tag = document.getElementById('val-m_W_tag');
-            m_W_tag.textContent = m_W_lpm !== null ? `@ ${m_W_lpm.toFixed(2)} L/min` : '';
+            if (m_W_lpm) {
+                m_W_tag.textContent = `@ ${parseFloat(m_W_lpm).toFixed(2)} L/min`;
+            } else {
+                m_W_tag.textContent = '';
+            }
         }
 
-        function sortChartDatasets() {
-            if (!chart) return;
-            chart.data.datasets.forEach((dataset) => {
-                dataset.data.sort((a, b) => a.x - b.x);
-            });
+        function updateResult(key, value, decimals) {
+            if (value === null || isNaN(value) || !isFinite(value)) {
+                results[key].textContent = '—';
+            } else {
+                results[key].textContent = value.toFixed(decimals);
+                resultCards[key].classList.remove('pulse');
+                void resultCards[key].offsetWidth;
+                resultCards[key].classList.add('pulse');
+            }
         }
+
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        // ============================================================
+        // CHART FUNCTIONALITY
+        // ============================================================
 
         function initChart() {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
@@ -1010,7 +1069,7 @@
                                     family: "'JetBrains Mono', monospace",
                                     size: 11
                                 },
-                                callback: function (value) {
+                                callback: function(value) {
                                     return value + ' RPM';
                                 }
                             },
@@ -1055,48 +1114,47 @@
             });
         }
 
-        document.getElementById('addPointBtn').addEventListener('click', function () {
+        document.getElementById('addPointBtn').addEventListener('click', function() {
             const m_G_Gprime_text = results.m_G_Gprime.textContent;
             const m_G_EB_text = results.m_G_EB.textContent;
-            const rpm = parseInputValue(inputs.rpm);
+            const rpm = parseFloat(document.getElementById('rpm').value);
 
-            if (m_G_Gprime_text === '—' || m_G_EB_text === '—' || rpm === null) {
-                alert('กรุณากรอก RPM และข้อมูลคำนวณให้ครบก่อนเพิ่มจุด');
-                return;
+            if (m_G_Gprime_text !== '—' && m_G_EB_text !== '—' && rpm) {
+                const m_G_Gprime = parseFloat(m_G_Gprime_text);
+                const m_G_EB = parseFloat(m_G_EB_text);
+
+                if (!chart) initChart();
+                chart.data.datasets[0].data.push({ x: rpm, y: m_G_Gprime });
+                chart.data.datasets[1].data.push({ x: rpm, y: m_G_EB });
+                chart.update();
             }
-
-            if (!chart) initChart();
-
-            const m_G_Gprime = parseFloat(m_G_Gprime_text);
-            const m_G_EB = parseFloat(m_G_EB_text);
-
-            chart.data.datasets[0].data.push({ x: rpm, y: m_G_Gprime });
-            chart.data.datasets[1].data.push({ x: rpm, y: m_G_EB });
-            sortChartDatasets();
-            chart.update();
         });
 
-        document.getElementById('clearChartBtn').addEventListener('click', function () {
-            if (!chart) return;
-            chart.data.datasets[0].data = [];
-            chart.data.datasets[1].data = [];
-            chart.update();
+        document.getElementById('clearChartBtn').addEventListener('click', function() {
+            testPoints = [];
+            if (chart) {
+                chart.data.datasets[0].data = [];
+                chart.data.datasets[1].data = [];
+                chart.update();
+            }
         });
 
-        document.getElementById('saveResultBtn').addEventListener('click', function () {
-            const rpm = inputs.rpm.value.trim() || '—';
+        // ============================================================
+        // SAVE & EXPORT
+        // ============================================================
+
+        document.getElementById('saveResultBtn').addEventListener('click', function() {
+            const rpm = document.getElementById('rpm').value || '—';
             const mGprime = results.m_G_Gprime.textContent;
             const mEB = results.m_G_EB.textContent;
-            const m_W_lpm = inputs.m_W.value.trim() || '—';
+            const m_W_lpm = document.getElementById('m_W').value || '—';
 
             if (mGprime === '—' || mEB === '—') {
                 alert('กรุณาคำนวณให้ครบก่อนบันทึก');
                 return;
             }
 
-            const pctDiffValue = parseFloat(mEB) === 0
-                ? 0
-                : (Math.abs(parseFloat(mGprime) - parseFloat(mEB)) / Math.abs(parseFloat(mEB))) * 100;
+            const pctDiff = Math.abs(parseFloat(mGprime) - parseFloat(mEB)) / parseFloat(mEB) * 100;
 
             const row = {
                 RPM: rpm,
@@ -1110,7 +1168,7 @@
                 rho: results.rho_exhaust.textContent,
                 m_G_Gprime: mGprime,
                 m_G_EB: mEB,
-                pctDiff: pctDiffValue.toFixed(2)
+                pctDiff: pctDiff.toFixed(2)
             };
 
             savedResults.push(row);
@@ -1123,19 +1181,19 @@
                 <td style="padding:5px;text-align:center;"><span style="background:rgba(34,211,238,0.1);color:#22d3ee;border:1px solid rgba(34,211,238,0.3);border-radius:3px;padding:1px 6px;font-size:9px;">${row.m_W_lpm}</span></td>
                 <td style="padding:5px;text-align:center;color:#f59e0b;font-weight:600;">${row.m_G_Gprime}</td>
                 <td style="padding:5px;text-align:center;color:#22d3ee;font-weight:600;">${row.m_G_EB}</td>
-                <td style="padding:5px;text-align:center;color:${pctDiffValue < 5 ? '#22d3ee' : '#ef4444'};">${row.pctDiff}%</td>
+                <td style="padding:5px;text-align:center;color:${pctDiff < 5 ? '#22d3ee' : '#ef4444'};">${row.pctDiff}%</td>
             `;
             tbody.appendChild(tr);
             document.getElementById('savedCount').textContent = `${savedResults.length} records`;
         });
 
-        document.getElementById('clearTableBtn').addEventListener('click', function () {
+        document.getElementById('clearTableBtn').addEventListener('click', function() {
             savedResults = [];
             document.getElementById('savedTableBody').innerHTML = '';
             document.getElementById('savedCount').textContent = '0 records';
         });
 
-        document.getElementById('exportPDFBtn').addEventListener('click', function () {
+        document.getElementById('exportPDFBtn').addEventListener('click', function() {
             if (savedResults.length === 0) {
                 alert('ยังไม่มีข้อมูลที่บันทึก');
                 return;
@@ -1147,27 +1205,17 @@
             doc.setFontSize(16);
             doc.setTextColor(245, 158, 11);
             doc.text('Exhaust Gas Mass Flow Rate — Calculation Results', 14, 16);
-
             doc.setFontSize(10);
             doc.setTextColor(150, 150, 150);
             doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 23);
 
             doc.autoTable({
                 head: [[
-                    'RPM',
-                    'Flow-water (L/min)',
-                    'mfuel (kg/s)',
-                    'Lambda',
-                    'A0',
-                    'G-prime',
-                    'VG-STD',
-                    'VG-actual',
-                    'rho-exh',
-                    'mG-Gprime (kg/s)',
-                    'mG-EB (kg/s)',
-                    '%Diff'
+                    'RPM', 'Flow-water (L/min)', 'mfuel (kg/s)', 'Lambda', 'A0',
+                    'G-prime', 'VG-STD', 'VG-actual', 'rho-exh', 'mG-Gprime (kg/s)',
+                    'mG-EB (kg/s)', '%Diff'
                 ]],
-                body: savedResults.map((r) => [
+                body: savedResults.map(r => [
                     r.RPM,
                     r.m_W_lpm,
                     r.m_fuel,
@@ -1193,9 +1241,7 @@
                     textColor: [13, 15, 20],
                     fontStyle: 'bold'
                 },
-                alternateRowStyles: {
-                    fillColor: [30, 37, 46]
-                },
+                alternateRowStyles: { fillColor: [30, 37, 46] },
                 tableLineColor: [245, 158, 11],
                 tableLineWidth: 0.1
             });
@@ -1203,11 +1249,7 @@
             doc.save('exhaust_results.pdf');
         });
 
-        Object.values(inputs).forEach((input) => {
-            input.addEventListener('input', calculate);
-        });
-
-        window.addEventListener('load', function () {
+        window.addEventListener('load', function() {
             initChart();
             calculate();
         });
