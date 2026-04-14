@@ -897,7 +897,15 @@
             } else {
                 document.getElementById('prev-NOx').textContent = '';
             }
-
+            
+            const m_W_lpm = inputs.m_W.value;
+            if (m_W_lpm) {
+            const m_W_kgs = parseFloat(m_W_lpm) / 60;
+            document.getElementById('prev-m_W').textContent = `= ${m_W_kgs.toFixed(6)} kg/s`;
+            } else {
+            document.getElementById('prev-m_W').textContent = '';
+            }
+            
             const T_GI = inputs.T_GI_C.value;
             if (T_GI) {
                 const T_GI_K = parseFloat(T_GI) + 273.15;
